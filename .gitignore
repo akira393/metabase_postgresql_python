@@ -1,0 +1,9 @@
+.ipynb_checkpoints
+.ipynb_checkpoints/*
+
+scripts/data/datalake
+scripts/data/datamart
+scripts/.virtual_documents
+
+data
+data/*

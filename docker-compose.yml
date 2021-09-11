@@ -1,0 +1,63 @@
+version: "3.5"
+services:
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    hostname: metabase
+    volumes: 
+    - /dev/urandom:/dev/random:ro
+    ports:
+      - 3000:3000
+    environment: 
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: metabase
+      MB_DB_PORT: 5432
+      MB_DB_USER: postgres
+      MB_DB_PASS: db_password
+      MB_DB_HOST: postgres-metabase
+    depends_on: 
+      - postgres-metabase
+    links:
+      - postgres
+
+  postgres-metabase:
+    image: postgres:latest
+    container_name: postgres-metabase
+    hostname: postgres-metabase
+    environment:
+      TZ: "Asia/Tokyo"
+      POSTGRES_USER: postgres
+      POSTGRES_DB: metabase
+      POSTGRES_PASSWORD: db_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    volumes:
+      - ./data/postgres_secrets_data:/var/lib/postgresql/data
+    command: bash -c 'usermod -o -u $LINUX_UID postgres; groupmod -o -g $LINUX_GID postgres; chown -R postgres:postgres /var/lib/postgresql/data; /usr/local/bin/docker-entrypoint.sh postgres'
+  
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    hostname: postgres
+    environment:
+      TZ: "Asia/Tokyo"
+      POSTGRES_DB: metabase
+      POSTGRES_USER: metabase
+      POSTGRES_PASSWORD: metabase
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5555:5432"
+    volumes:
+      - ./data/postgres_data:/var/lib/postgresql/data
+    command: bash -c 'usermod -o -u $LINUX_UID postgres; groupmod -o -g $LINUX_GID postgres; chown -R postgres:postgres /var/lib/postgresql/data; /usr/local/bin/docker-entrypoint.sh postgres'
+
+  jupyterlab:
+    build: 
+      context: .
+      dockerfile: ./containers/python/Dockerfile
+    volumes:
+      - "./scripts:/home/work/scripts"
+    ports:
+      - "8080:8080"
+    tty: true
+    command: jupyter lab --ip=0.0.0.0 --port=8080 --allow-root --no-browser --notebook-dir=scripts
+  
